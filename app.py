@@ -11,9 +11,10 @@ from langchain_core.output_parsers import StrOutputParser
 
 st.set_page_config(page_title="Philippine Cyber Law RAG Assistant", layout="centered")
 
-# Load API Key seamlessly from Streamlit Secrets
+# Retrieve and clean API key from Streamlit Secrets
 if "GOOGLE_API_KEY" in st.secrets:
-    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+    api_key = str(st.secrets["GOOGLE_API_KEY"]).strip().strip('"').strip("'")
+    os.environ["GOOGLE_API_KEY"] = api_key
 else:
     st.error("Error: GOOGLE_API_KEY not found in Streamlit Secrets!")
     st.stop()
@@ -42,8 +43,12 @@ with st.spinner("Initializing legal knowledge base..."):
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-# Fixed model naming convention for the latest Google GenAI client
-llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-flash", temperature=0.3)
+# Initialize Chat model using the standard Gemini 1.5 Flash identifier
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash", 
+    google_api_key=api_key,
+    temperature=0.3
+)
 
 template = """You are an expert legal assistant specializing in Philippine digital banking laws, 
 cyber scams, and financial consumer protection (such as R.A. 12010 AFASA Act). 
