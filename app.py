@@ -11,7 +11,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 st.set_page_config(page_title="Philippine Cyber Law RAG Assistant", layout="centered")
 
-# Load API Key seamlessly from Streamlit Secrets without showing any sidebar
+# Load API Key seamlessly from Streamlit Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 else:
@@ -41,7 +41,9 @@ with st.spinner("Initializing legal knowledge base..."):
     vectorstore = initialize_vectorstore()
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
+
+# Fixed model naming convention for the latest Google GenAI client
+llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-flash", temperature=0.3)
 
 template = """You are an expert legal assistant specializing in Philippine digital banking laws, 
 cyber scams, and financial consumer protection (such as R.A. 12010 AFASA Act). 
