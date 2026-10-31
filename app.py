@@ -22,16 +22,17 @@ st.write("A local RAG application powered by **sentence-transformers** embedding
 # --- Sidebar Configuration for Ollama & RAG Parameters ---
 st.sidebar.title("⚙️ RAG & Ollama Settings")
 
-# Ngrok tunnel URL input (matches Section 2 & Section 6 of your notebook)
+# Ngrok tunnel URL input
 ollama_url = st.sidebar.text_input(
     "Ollama Ngrok Base URL",
     value="https://cabdriver-handcraft-schedule.ngrok-free.dev",
     type="default"
 ).rstrip("/")
 
+# Updated model tag to match your exact local qwen3:8b-q4_K_M tag[cite: 6]
 ollama_model = st.sidebar.selectbox(
     "Ollama Model Tag",
-    ["qwen2.5:3b", "qwen3:8b"],
+    ["qwen2.5:3b", "qwen3:8b-q4_K_M"],
     index=0
 )
 
@@ -91,7 +92,7 @@ def initialize_vectorstore(c_size, c_overlap, t_k):
     )
 
     # Chroma Database Setup
-    active_chroma_dir = f"{CH_DIR}_cs{c_size}_ov{c_overlap}_k{t_k}" if 'CH_DIR' in locals() else f"{CHROMA_DIR}_active"
+    active_chroma_dir = f"{CHROMA_DIR}_cs{c_size}_ov{c_overlap}_k{t_k}"
     
     vectorstore = Chroma.from_documents(
         documents=chunks,
@@ -112,7 +113,7 @@ if not retriever:
 else:
     st.sidebar.success(f"Database active! Total chunks indexed: {chunk_count}")
 
-# --- 2. Ollama Request Handler (Matches Section 7) ---
+# --- 2. Ollama Request Handler ---
 def call_ollama(messages, model_tag, base_url):
     formatted_prompt = "\n".join([f"{m['role'].upper()}: {m['content']}" for m in messages]) + "\nASSISTANT:"
 
@@ -236,8 +237,8 @@ if user_query := st.chat_input("Ask a question about Philippine digital scam law
                 res = call_ollama(messages_payload, ollama_model, ollama_url)
                 answer = res["answer"]
                 
-                # Append telemetry & sources metrics identical to your notebook output
-                answer += f"\n\n**Sources:**\n* " + "\n* ".join(sources)
+                # Append telemetry & sources metrics
+                answer += "\n\n**Sources:**\n* " + "\n* ".join(sources)
                 answer += f"\n\n---\n*⏱️ Retrieval: {retrieval_seconds:.2f}s | Gen Time: {res['generation_wall_seconds']:.2f}s | Speed: {res['tokens_per_second']:.2f} tok/s*"
                 
             except Exception as exc:
