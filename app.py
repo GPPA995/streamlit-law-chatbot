@@ -25,7 +25,7 @@ st.write("An interactive RAG chatbot powered by Google Gemini and your legal ref
 
 @st.cache_resource
 def initialize_vectorstore():
-    loader = PyPDFDirectoryLoader("knowledge_base")
+    loader = PyPDFDirectoryLoader("Knowledge_base")
     docs = loader.load()
     
     if not docs:
