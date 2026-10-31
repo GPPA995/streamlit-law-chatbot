@@ -11,18 +11,12 @@ from langchain_core.output_parsers import StrOutputParser
 
 st.set_page_config(page_title="Philippine Cyber Law RAG Assistant", layout="centered")
 
-# Sidebar configuration - checks Streamlit Secrets first
-st.sidebar.title("🔐 Configuration")
-
+# Load API Key seamlessly from Streamlit Secrets without showing any sidebar
 if "GOOGLE_API_KEY" in st.secrets:
     os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-    st.sidebar.success("API Key loaded securely from Secrets!")
 else:
-    api_key = st.sidebar.text_input("Enter your Google Gemini API Key", type="password")
-    if not api_key:
-        st.info("Please enter your Google Gemini API Key in the sidebar or configure Streamlit Secrets.")
-        st.stop()
-    os.environ["GOOGLE_API_KEY"] = api_key
+    st.error("Error: GOOGLE_API_KEY not found in Streamlit Secrets!")
+    st.stop()
 
 st.title("🛡️ Philippine Digital Bank & Cyber Scam Laws Assistant")
 st.write("An interactive RAG chatbot powered by Google Gemini and your legal reference compendium.")
