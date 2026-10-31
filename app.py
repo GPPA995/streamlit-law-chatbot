@@ -72,9 +72,9 @@ Context:
 Question: {user_query}
 """
             
-            # Using standard gemini-2.5-flash for the native Google GenAI client
+            # Using valid production model identifier gemini-1.5-flash
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-1.5-flash",
                 contents=prompt,
             )
             answer = response.text
