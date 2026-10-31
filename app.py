@@ -1,23 +1,23 @@
 import os
 import streamlit as st
 from langchain_chroma import Chroma
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
+from google import genai
 
 st.set_page_config(page_title="Philippine Cyber Law RAG Assistant", layout="centered")
 
-# Retrieve and clean API key from Streamlit Secrets
+# Securely retrieve API Key
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = str(st.secrets["GOOGLE_API_KEY"]).strip().strip('"').strip("'")
     os.environ["GOOGLE_API_KEY"] = api_key
 else:
     st.error("Error: GOOGLE_API_KEY not found in Streamlit Secrets!")
     st.stop()
+
+# Initialize the official native Google GenAI client
+client = genai.Client(api_key=api_key)
 
 st.title("🛡️ Philippine Digital Bank & Cyber Scam Laws Assistant")
 st.write("An interactive RAG chatbot powered by Google Gemini and your legal reference compendium.")
@@ -43,36 +43,6 @@ with st.spinner("Initializing legal knowledge base..."):
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-# Initialize Chat model using the standard Gemini 1.5 Flash identifier
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash", 
-    google_api_key=api_key,
-    temperature=0.3
-)
-
-template = """You are an expert legal assistant specializing in Philippine digital banking laws, 
-cyber scams, and financial consumer protection (such as R.A. 12010 AFASA Act). 
-Use the following retrieved context to answer the user's question accurately. 
-If you don't know the answer, say that you don't know. Keep your answers professional, 
-structured, and cite specific pages or sections from the context.
-
-Context:
-{context}
-
-Question: {question}
-"""
-prompt = ChatPromptTemplate.from_template(template)
-
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
-
-rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -87,9 +57,31 @@ if user_query := st.chat_input("Ask about Philippine digital scam laws..."):
 
     with st.chat_message("assistant"):
         with st.spinner("Searching legal documents..."):
+            # Retrieve relevant legal documents
             retrieved_docs = retriever.invoke(user_query)
-            answer = rag_chain.invoke(user_query)
+            context_text = "\n\n".join([doc.page_content for doc in retrieved_docs])
             
+            # Construct legal prompt
+            prompt = f"""You are an expert legal assistant specializing in Philippine digital banking laws, 
+cyber scams, and financial consumer protection (such as R.A. 12010 AFASA Act). 
+Use the following retrieved context to answer the user's question accurately. 
+If you don't know the answer, say that you don't know. Keep your answers professional, 
+structured, and cite specific pages or sections from the context.
+
+Context:
+{context_text}
+
+Question: {user_query}
+"""
+            
+            # Generate response using the native Google GenAI SDK client
+            response = client.models.generate_content(
+                model="gemini-1.5-flash",
+                contents=prompt,
+            )
+            answer = response.text
+            
+            # Format and append sources
             sources = set()
             for doc in retrieved_docs:
                 source_name = os.path.basename(doc.metadata.get("source", "Unknown"))
