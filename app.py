@@ -11,15 +11,18 @@ from langchain_core.output_parsers import StrOutputParser
 
 st.set_page_config(page_title="Philippine Cyber Law RAG Assistant", layout="centered")
 
-# Sidebar configuration
+# Sidebar configuration - checks Streamlit Secrets first
 st.sidebar.title("🔐 Configuration")
-api_key = st.sidebar.text_input("Enter your Google Gemini API Key", type="password")
 
-if not api_key:
-    st.info("Please enter your Google Gemini API Key in the sidebar to start.")
-    st.stop()
-
-os.environ["GOOGLE_API_KEY"] = api_key
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+    st.sidebar.success("API Key loaded securely from Secrets!")
+else:
+    api_key = st.sidebar.text_input("Enter your Google Gemini API Key", type="password")
+    if not api_key:
+        st.info("Please enter your Google Gemini API Key in the sidebar or configure Streamlit Secrets.")
+        st.stop()
+    os.environ["GOOGLE_API_KEY"] = api_key
 
 st.title("🛡️ Philippine Digital Bank & Cyber Scam Laws Assistant")
 st.write("An interactive RAG chatbot powered by Google Gemini and your legal reference compendium.")
@@ -36,7 +39,6 @@ def initialize_vectorstore():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     
-    # Use lightweight local embeddings to avoid Google API embedding client errors
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
     return vectorstore
