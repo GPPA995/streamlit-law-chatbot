@@ -57,11 +57,9 @@ if user_query := st.chat_input("Ask about Philippine digital scam laws..."):
 
     with st.chat_message("assistant"):
         with st.spinner("Searching legal documents..."):
-            # Retrieve relevant legal documents
             retrieved_docs = retriever.invoke(user_query)
             context_text = "\n\n".join([doc.page_content for doc in retrieved_docs])
             
-            # Construct legal prompt
             prompt = f"""You are an expert legal assistant specializing in Philippine digital banking laws, 
 cyber scams, and financial consumer protection (such as R.A. 12010 AFASA Act). 
 Use the following retrieved context to answer the user's question accurately. 
@@ -74,14 +72,13 @@ Context:
 Question: {user_query}
 """
             
-            # Generate response using the native Google GenAI SDK client
+            # Using standard gemini-2.5-flash for the native Google GenAI client
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-flash",
                 contents=prompt,
             )
             answer = response.text
             
-            # Format and append sources
             sources = set()
             for doc in retrieved_docs:
                 source_name = os.path.basename(doc.metadata.get("source", "Unknown"))
