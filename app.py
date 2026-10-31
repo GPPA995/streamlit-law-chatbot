@@ -8,15 +8,14 @@ from google import genai
 
 st.set_page_config(page_title="Philippine Cyber Law RAG Assistant", layout="centered")
 
-# Securely retrieve API Key
+# Retrieve and validate API Key from Streamlit Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = str(st.secrets["GOOGLE_API_KEY"]).strip().strip('"').strip("'")
-    os.environ["GOOGLE_API_KEY"] = api_key
 else:
     st.error("Error: GOOGLE_API_KEY not found in Streamlit Secrets!")
     st.stop()
 
-# Initialize the official native Google GenAI client
+# Initialize the Google GenAI client cleanly with the key
 client = genai.Client(api_key=api_key)
 
 st.title("🛡️ Philippine Digital Bank & Cyber Scam Laws Assistant")
@@ -72,12 +71,14 @@ Context:
 Question: {user_query}
 """
             
-            # Using valid production model identifier gemini-1.5-flash
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=prompt,
-            )
-            answer = response.text
+            try:
+                response = client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=prompt,
+                )
+                answer = response.text
+            except Exception as e:
+                answer = f"API Error encountered: {str(e)}"
             
             sources = set()
             for doc in retrieved_docs:
@@ -85,7 +86,7 @@ Question: {user_query}
                 page = doc.metadata.get("page", 0) + 1
                 sources.add(f"{source_name}, page {page}")
                 
-            if sources:
+            if sources and "API Error" not in answer:
                 answer += "\n\n**Sources:**\n* " + "\n* ".join(sources)
                 
             st.markdown(answer)
