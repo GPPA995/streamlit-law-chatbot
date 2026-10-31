@@ -25,13 +25,17 @@ st.write("An interactive RAG chatbot powered by Google Gemini and your legal ref
 
 @st.cache_resource
 def initialize_vectorstore():
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     loader = PyPDFDirectoryLoader("knowledge_base")
     docs = loader.load()
     
+    if not docs:
+        st.error("Error: No PDF documents found in the 'knowledge_base' folder! Please ensure your PDF is uploaded to GitHub.")
+        st.stop()
+        
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
     return vectorstore
 
@@ -57,7 +61,6 @@ prompt = ChatPromptTemplate.from_template(template)
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
-# Clean LCEL chain avoiding missing module errors
 rag_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
@@ -79,7 +82,6 @@ if user_query := st.chat_input("Ask about Philippine digital scam laws..."):
 
     with st.chat_message("assistant"):
         with st.spinner("Searching legal documents..."):
-            # Fetch retrieved docs for sources mapping
             retrieved_docs = retriever.invoke(user_query)
             answer = rag_chain.invoke(user_query)
             
