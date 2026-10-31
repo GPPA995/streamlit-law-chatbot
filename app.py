@@ -72,9 +72,8 @@ Question: {user_query}
 """
             
             try:
-                # Updated model identifier compatible with the v1beta API client routing
                 response = client.models.generate_content(
-                    model="publishers/google/models/gemini-1.5-flash",
+                    model="gemini-2.0-flash",
                     contents=prompt,
                 )
                 answer = response.text
