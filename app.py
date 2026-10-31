@@ -1,7 +1,8 @@
 import os
 import streamlit as st
 from langchain_chroma import Chroma
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import ChatPromptTemplate
@@ -25,19 +26,18 @@ st.write("An interactive RAG chatbot powered by Google Gemini and your legal ref
 
 @st.cache_resource
 def initialize_vectorstore():
-    # Make sure folder name matches your GitHub folder: Knowledge_base or knowledge_base
     loader = PyPDFDirectoryLoader("Knowledge_base")
     docs = loader.load()
     
     if not docs:
-        st.error("Error: No PDF documents found in the folder! Please check your folder name on GitHub.")
+        st.error("Error: No PDF documents found in the 'Knowledge_base' folder!")
         st.stop()
         
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     
-    # Updated model string format compatible with the latest GenAI SDK
-    embeddings = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
+    # Use lightweight local embeddings to avoid Google API embedding client errors
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
     return vectorstore
 
