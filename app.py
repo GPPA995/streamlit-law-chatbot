@@ -25,17 +25,19 @@ st.write("An interactive RAG chatbot powered by Google Gemini and your legal ref
 
 @st.cache_resource
 def initialize_vectorstore():
+    # Make sure folder name matches your GitHub folder: Knowledge_base or knowledge_base
     loader = PyPDFDirectoryLoader("Knowledge_base")
     docs = loader.load()
     
     if not docs:
-        st.error("Error: No PDF documents found in the 'knowledge_base' folder! Please ensure your PDF is uploaded to GitHub.")
+        st.error("Error: No PDF documents found in the folder! Please check your folder name on GitHub.")
         st.stop()
         
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splits = text_splitter.split_documents(docs)
     
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    # Updated model string format compatible with the latest GenAI SDK
+    embeddings = GoogleGenerativeAIEmbeddings(model="text-embedding-004")
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
     return vectorstore
 
