@@ -1,4 +1,8 @@
 import os
+import torch
+# Prevent PyTorch CPU multi-threading deadlocks on cloud containers
+torch.set_num_threads(1)
+
 import streamlit as st
 from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -40,7 +44,8 @@ def initialize_vectorstore():
 with st.spinner("Initializing legal knowledge base..."):
     vectorstore = initialize_vectorstore()
 
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+# Reduced k to 2 for faster retrieval speeds
+retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
